@@ -14,7 +14,7 @@ export class UserController {
   }
 
   @Get('finduser')
-  async findUser(@Body() userWhereInputUnique: Prisma.UserWhereUniqueInput): Promise<UserModel> {
-    return this.userService.user(userWhereInputUnique)
+  async findUser(@Body() userWhereInputUnique: UserModel): Promise<UserModel> {
+    return this.userService.findWithUserName(userWhereInputUnique)
   }
 }
