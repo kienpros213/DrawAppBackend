@@ -16,7 +16,7 @@ export class AuthController {
 
     @Post('login')
     login(@Body() userData: UserModel) {
-        return this.authService.signIn(userData)
+        return this.authService.validateUser(userData)
     }
 
 }
