@@ -5,8 +5,11 @@ import { Server, Socket } from 'socket.io';
 export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 
+  private drawState: any[] = [];
+
   handleConnection(client: Socket): void {
     console.log('A user connected');
+    this.server.emit('drawState', this.drawState);
   }
 
   handleDisconnect(client: Socket): void {
@@ -15,16 +18,14 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @SubscribeMessage('chat message')
   handleChatMessage(client: Socket, msg: string): void {
-    // Handle 'chat message' event
     this.server.emit('chat message', msg);
   }
 
   @SubscribeMessage('client')
   handleClientEvent(client: Socket, point: any): void {
-    // Handle 'client' event
     console.log(point);
-    this.server.emit('client', point);
-  }
+    this.drawState.push(point);
+    client.broadcast.emit('client', point)
 
-  // Add other event handlers as needed
+  }
 }
