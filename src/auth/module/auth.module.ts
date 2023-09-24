@@ -5,8 +5,10 @@ import { PassportModule } from '@nestjs/passport';
 import { LocalStrategy } from 'src/strategy/local.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from 'src/constants/constants';
+import { AuthController } from '../controller/auth.controller';
 
 @Module({
+  controllers: [AuthController],
   imports: [
     UserModule,
     PassportModule,

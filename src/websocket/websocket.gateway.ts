@@ -5,7 +5,10 @@ import { Server, Socket } from 'socket.io';
 export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 
+  private drawState: any[] = []
+
   handleConnection(client: Socket): void {
+    this.server.emit('drawState', this.drawState);
     console.log('A user connected');
   }
 
@@ -23,6 +26,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   handleClientEvent(client: Socket, point: any): void {
     // Handle 'client' event
     console.log(point);
+    this.drawState.push(point)
     this.server.emit('client', point);
   }
 

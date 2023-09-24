@@ -29,7 +29,7 @@ async function bootstrap() {
   app.enableCors({
     origin: 'http://localhost:5173', // Replace with the actual origin of your frontend
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
+    credentials: true, // Set to true if you need to allow cookies with CORS
   });
 
   await app.listen(3030);
