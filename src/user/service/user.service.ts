@@ -7,11 +7,11 @@ export class UserService {
   constructor(private prisma: PrismaService) { }
 
   async findWithUserName(
-    userData: UserModel,
+    username,
   ): Promise<UserModel | null> {
     return this.prisma.user.findUnique({
       where: {
-        username: userData.username
+        username: username
       },
     });
   }

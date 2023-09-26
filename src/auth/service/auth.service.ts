@@ -10,17 +10,20 @@ export class AuthService {
         private jwtService: JwtService
     ) { }
 
-    async validateUser(userData: UserModel): Promise<any> {
-        const user = await this.userService.findWithUserName(userData);
-        if (user && user.password === userData.password) {
+    async validateUser(username: string, password: string): Promise<any> {
+        console.log("valdate user inside auth service");
+        const user = await this.userService.findWithUserName(username);
+        if (user && user.password === password) {
             const { password, ...result } = user;
             return result;
         }
         return null;
     }
 
-    async login(user: UserModel) {
-        const payload = { username: user.username, sub: user.id };
+    async generateJwt(user: UserModel) {
+        console.log("generate jwt token")
+        const payload = { username: user.username, sub: user.password };
+        console.log(payload)
         const access_token = await this.jwtService.signAsync(payload)
         return {
             access_token
