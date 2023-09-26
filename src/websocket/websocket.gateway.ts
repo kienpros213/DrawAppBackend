@@ -16,19 +16,16 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     console.log('A user disconnect');
   }
 
-  @SubscribeMessage('chat message')
-  handleChatMessage(client: Socket, msg: string): void {
-    // Handle 'chat message' event
-    this.server.emit('chat message', msg);
-  }
-
   @SubscribeMessage('client')
   handleClientEvent(client: Socket, point: any): void {
-    // Handle 'client' event
     console.log(point);
     this.drawState.push(point)
-    this.server.emit('client', point);
+    this.server.to('room1').emit('client', point);
   }
 
-  // Add other event handlers as needed
+  @SubscribeMessage('joinRequest')
+  handleJoinRequest(client: Socket, roomName: any): void {
+    client.join(roomName)
+    console.log(roomName)
+  }
 }
