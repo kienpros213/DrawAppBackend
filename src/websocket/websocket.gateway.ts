@@ -87,13 +87,6 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     // client.broadcast.emit("serverStopFreeShape",);
     client.to(payload.room).emit("serverStopFreeShape", payload);
   }
-
-  
-  @SubscribeMessage('sendSnapshot')
-  handleSendSnapshot(client: Socket, payload: any): void {
-    // client.broadcast.emit("serverSendSnapshot", payload);
-    client.to(payload.room).emit("serverSendSnapshot", payload);
-  }
   
 
 }
