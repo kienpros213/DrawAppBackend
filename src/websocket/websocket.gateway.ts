@@ -1,15 +1,14 @@
 import { SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Buffer } from 'buffer';
+import { getRoomDrawState } from 'src/utils/getRoomDrawState';
 
 @WebSocketGateway()
 export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 
-  private drawState: any[] = []
-
+  private roomDrawState = {};
+  
   handleConnection(client: Socket): void {
-    this.server.emit('drawState', this.drawState);
     console.log('A user connected');
   }
 
@@ -21,13 +20,24 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   @SubscribeMessage('joinRequest')
   handleJoinRequest(client: Socket, roomName: any): void {
     client.join(roomName)
+    if (!this.roomDrawState[roomName]) {
+      this.roomDrawState[roomName] = {};
+    }
+    
+    if (!this.roomDrawState[roomName]["clientId"]) {
+      this.roomDrawState[roomName]["clientId"] = [];
+    }
+    this.roomDrawState[roomName]["clientId"].push(client.id)
+    client.emit('roomJoined', this.roomDrawState[1]);
+    console.log(this.roomDrawState[roomName]);
   }
 
   @SubscribeMessage('clientBrushDraw')
   handleClientBrushDraw(client: Socket, payload: any): void {
-    console.log("brush:", payload)
-    // client.broadcast.emit("serverBrushDraw", payload);
     client.to(payload.room).emit("serverBrushDraw", payload)
+    const getBrushDrawState = getRoomDrawState(this.roomDrawState, payload);
+    getBrushDrawState[payload.room][payload.tool].push(payload);
+    console.log(this.roomDrawState);
   } 
 
   @SubscribeMessage('clientCircleDraw')
@@ -40,6 +50,9 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   handleClientPushCircle(client: Socket, payload: any): void {
     // client.broadcast.emit("serverPushCircle", payload);
     client.to(payload.room).emit("serverPushCircle", payload)
+    const getCircleDrawState = getRoomDrawState(this.roomDrawState, payload);
+    getCircleDrawState[payload.room][payload.tool].push(payload);
+    console.log(getCircleDrawState);
   }
 
   @SubscribeMessage('clientRectDraw')
@@ -52,6 +65,9 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   handleClientPushRect(client: Socket, payload: any): void {
     // client.broadcast.emit("serverPushRect", payload);
     client.to(payload.room).emit("serverPushRect", payload)
+    const getRectDrawState = getRoomDrawState(this.roomDrawState, payload);
+    getRectDrawState[payload.room][payload.tool].push(payload);
+    console.log(getRectDrawState);
   }
 
   @SubscribeMessage('clientEraserDraw')
@@ -62,7 +78,6 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @SubscribeMessage('clientFreeShapeDraw')
   handleClientFreeShapeDraw(client: Socket, payload: any): void {
-    console.log(payload)
     // client.broadcast.emit("serverFreeShapeDraw", payload);
     client.to(payload.room).emit("serverFreeShapeDraw", payload)
   }
@@ -70,14 +85,12 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   @SubscribeMessage('clientStopFreeShape')
   handleClientStopFreeShape(client: Socket, payload: any): void {
     // client.broadcast.emit("serverStopFreeShape",);
-    console.log("stop")
     client.to(payload.room).emit("serverStopFreeShape", payload);
   }
 
   
   @SubscribeMessage('sendSnapshot')
   handleSendSnapshot(client: Socket, payload: any): void {
-    console.log(payload);
     // client.broadcast.emit("serverSendSnapshot", payload);
     client.to(payload.room).emit("serverSendSnapshot", payload);
   }
