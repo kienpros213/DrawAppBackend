@@ -1,4 +1,10 @@
-import { SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
+import {
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+  OnGatewayConnection,
+  OnGatewayDisconnect
+} from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { getRoomDrawState } from 'src/utils/getRoomDrawState';
 
@@ -7,88 +13,92 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   @WebSocketServer() server: Server;
 
   private roomDrawState = {};
-  
-  handleConnection(client: Socket): void {
+  private online = [];
+
+  handleConnection(client: Socket, payload: any): void {
     console.log('A user connected');
+  }
+
+  @SubscribeMessage('connected')
+  handleNewUser(client: Socket, roomName: any): void {
+    this.online.push(client.id);
+    this.server.emit('userConnected', client.id);
   }
 
   handleDisconnect(client: Socket): void {
     console.log('A user disconnect');
+    const clienIndex = this.online.indexOf(client.id);
+    this.server.emit('userDisconnected', this.online[clienIndex]);
+    this.online.splice(clienIndex, 1);
   }
 
-//////////join room//////////
+  //////////join room//////////
   @SubscribeMessage('joinRequest')
   handleJoinRequest(client: Socket, roomName: any): void {
-    client.join(roomName)
+    console.log(roomName);
+    client.join(roomName);
     if (!this.roomDrawState[roomName]) {
       this.roomDrawState[roomName] = {};
     }
-    
-    if (!this.roomDrawState[roomName]["clientId"]) {
-      this.roomDrawState[roomName]["clientId"] = [];
+
+    if (!this.roomDrawState[roomName]['clientId']) {
+      this.roomDrawState[roomName]['clientId'] = [];
     }
-    this.roomDrawState[roomName]["clientId"].push(client.id)
+    this.roomDrawState[roomName]['clientId'].push(client.id);
     client.emit('roomJoined', this.roomDrawState[1]);
-    console.log(this.roomDrawState[roomName]);
   }
 
   //////////brush listener//////////
   @SubscribeMessage('clientBrushDraw')
   handleClientBrushDraw(client: Socket, payload: any): void {
-    client.to(payload.room).emit("serverBrushDraw", payload)
+    client.to(payload.room).emit('serverBrushDraw', payload);
     const getBrushDrawState = getRoomDrawState(this.roomDrawState, payload);
     getBrushDrawState[payload.room][payload.tool].push(payload);
-    console.log(this.roomDrawState);
-  } 
+  }
 
   //////////circle listener//////////
   @SubscribeMessage('clientCircleDraw')
   handleClientCircleDraw(client: Socket, payload: any): void {
-    client.to(payload.room).emit("serverCircleDraw", payload)
+    client.to(payload.room).emit('serverCircleDraw', payload);
   }
 
   @SubscribeMessage('clientPushCircle')
   handleClientPushCircle(client: Socket, payload: any): void {
-    client.to(payload.room).emit("serverPushCircle", payload)
+    client.to(payload.room).emit('serverPushCircle', payload);
     const getCircleDrawState = getRoomDrawState(this.roomDrawState, payload);
     getCircleDrawState[payload.room][payload.tool].push(payload);
-    console.log(getCircleDrawState);
   }
 
   //////////rectangle listener//////////
   @SubscribeMessage('clientRectDraw')
   handleClientRectDraw(client: Socket, payload: any): void {
-    client.to(payload.room).emit("serverRectDraw", payload)
+    client.to(payload.room).emit('serverRectDraw', payload);
   }
 
   @SubscribeMessage('clientPushRect')
   handleClientPushRect(client: Socket, payload: any): void {
-    client.to(payload.room).emit("serverPushRect", payload)
+    client.to(payload.room).emit('serverPushRect', payload);
     const getRectDrawState = getRoomDrawState(this.roomDrawState, payload);
     getRectDrawState[payload.room][payload.tool].push(payload);
-    console.log(getRectDrawState);
   }
 
   //////////eraser listener//////////
   @SubscribeMessage('clientEraserDraw')
   handleClientEraserDraw(client: Socket, payload: any): void {
-    client.to(payload.room).emit("serverEraserDraw", payload)
+    client.to(payload.room).emit('serverEraserDraw', payload);
   }
 
   //////////freeShape listener//////////
   @SubscribeMessage('clientFreeShapeDraw')
   handleClientFreeShapeDraw(client: Socket, payload: any): void {
-    client.to(payload.room).emit("serverFreeShapeDraw", payload)
+    client.to(payload.room).emit('serverFreeShapeDraw', payload);
   }
 
   @SubscribeMessage('clientStopFreeShape')
   handleClientStopFreeShape(client: Socket, payload: any): void {
     // client.broadcast.emit("serverStopFreeShape",);
-    client.to(payload.room).emit("serverStopFreeShape", payload);
+    client.to(payload.room).emit('serverStopFreeShape', payload);
     const getFreeShapeDrawState = getRoomDrawState(this.roomDrawState, payload);
     getFreeShapeDrawState[payload.room][payload.tool].push(payload);
-    console.log(getFreeShapeDrawState);
   }
-  
-
 }

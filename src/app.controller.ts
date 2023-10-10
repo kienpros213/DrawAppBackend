@@ -4,12 +4,10 @@ import { AuthService } from './auth/service/auth.service';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
 import { User } from '@prisma/client';
 
-@Controller("/")
+@Controller('/')
 export class AppController {
-
-  @Get("/")
+  @Get('/')
   welcome() {
-    return "welcum"
+    return 'welcum';
   }
-
 }

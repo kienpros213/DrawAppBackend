@@ -6,18 +6,17 @@ import { LocalAuthGuard } from 'src/guard/local-auth.guard';
 
 @Controller('auth')
 export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+  @UseGuards(LocalAuthGuard)
+  @Post('login')
+  login(@Body() userData: UserModel) {
+    console.log(userData);
+    return this.authService.generateJwt(userData);
+  }
 
-    constructor(private readonly authService: AuthService) { }
-    @UseGuards(LocalAuthGuard)
-    @Post('login')
-    login(@Body() userData: UserModel) {
-        console.log(userData)
-        return this.authService.generateJwt(userData)
-    }
-
-    @UseGuards(JwtAuthGuard)
-    @Get('get')
-    getProfile() {
-        return "the profile";
-    }
+  @UseGuards(JwtAuthGuard)
+  @Get('get')
+  getProfile() {
+    return 'the profile';
+  }
 }

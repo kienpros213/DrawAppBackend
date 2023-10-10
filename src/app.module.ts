@@ -9,27 +9,20 @@ import { AuthController } from './auth/controller/auth.controller';
 import { WebsocketGateway } from './websocket/websocket.gateway';
 
 @Module({
-  imports: [
-    UserModule,
-    ConfigModule.forRoot(),
-    AuthModule,
-  ],
+  imports: [UserModule, ConfigModule.forRoot(), AuthModule],
   providers: [AppService, WebsocketGateway],
-  controllers: [AuthController],
+  controllers: [AuthController]
 })
-export class AppModule { }
+export class AppModule {}
 
 async function bootstrap() {
-  const app = await NestFactory.create(
-    AppModule,
-    new ExpressAdapter(),
-  );
+  const app = await NestFactory.create(AppModule, new ExpressAdapter());
 
   // Enable CORS
   app.enableCors({
     origin: 'http://localhost:5173', // Replace with the actual origin of your frontend
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true, // Set to true if you need to allow cookies with CORS
+    credentials: true // Set to true if you need to allow cookies with CORS
   });
 
   await app.listen(3030);
