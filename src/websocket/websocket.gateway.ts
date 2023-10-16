@@ -22,12 +22,18 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   @SubscribeMessage('connected')
   handleNewUser(client: Socket, roomName: any): void {
     console.log(client.id);
-    this.server.emit('userConnected', client.id);
+    if (!this.online.includes(client.id)) {
+      this.online.push(client.id);
+    }
+    this.server.emit('userConnected', this.online);
   }
 
   handleDisconnect(client: Socket): void {
     console.log('A user disconnect');
-    this.server.emit('userDisconnected', client.id);
+    const clienIndex = this.online.indexOf(client.id);
+    this.online.splice(clienIndex, 1);
+    this.server.emit('userDisconnected', this.online);
+    console.log(this.online);
   }
 
   //////////join room//////////
