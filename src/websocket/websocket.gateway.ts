@@ -49,7 +49,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
       this.roomDrawState[roomName]['clientId'] = [];
     }
     this.roomDrawState[roomName]['clientId'].push(client.id);
-    client.emit('roomJoined', this.roomDrawState[1]);
+    client.emit('roomJoined', this.roomDrawState[roomName]);
   }
 
   //////////brush listener//////////
