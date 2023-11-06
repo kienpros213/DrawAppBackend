@@ -1,4 +1,4 @@
-export function getRoomDrawState(roomDrawState, payload: any) {
+export function getRoomDrawState(roomDrawState: any, payload: any) {
   if (!roomDrawState[payload.room]) {
     roomDrawState[payload.room] = {};
   }

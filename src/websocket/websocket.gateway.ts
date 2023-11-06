@@ -21,7 +21,6 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @SubscribeMessage('connected')
   handleNewUser(client: Socket, roomName: any): void {
-    console.log(client.id);
     if (!this.online.includes(client.id)) {
       this.online.push(client.id);
     }
@@ -33,13 +32,11 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     const clienIndex = this.online.indexOf(client.id);
     this.online.splice(clienIndex, 1);
     this.server.emit('userDisconnected', this.online);
-    console.log(this.online);
   }
 
   //////////join room//////////
   @SubscribeMessage('joinRequest')
   handleJoinRequest(client: Socket, roomName: any): void {
-    console.log(roomName);
     client.join(roomName);
     if (!this.roomDrawState[roomName]) {
       this.roomDrawState[roomName] = {};
@@ -104,5 +101,18 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     client.to(payload.room).emit('serverStopFreeShape', payload);
     const getFreeShapeDrawState = getRoomDrawState(this.roomDrawState, payload);
     getFreeShapeDrawState[payload.room][payload.tool].push(payload);
+  }
+
+  //////////mouse location listener//////////
+  @SubscribeMessage('mouseLocation')
+  handleMouseLocation(client: Socket, payload: any): void {
+    client.to(payload.room).emit('serverMouseLocation', payload);
+  }
+
+  //////////clear canvas listener//////////
+  @SubscribeMessage('clientClearCanvas')
+  handleClientClearCanvas(client: Socket, payload: any): void {
+    console.log(payload);
+    console.log(this.roomDrawState[payload.room].clientId);
   }
 }

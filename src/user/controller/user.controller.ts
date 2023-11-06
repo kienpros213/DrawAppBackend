@@ -13,6 +13,6 @@ export class UserController {
 
   @Get('finduser')
   async findUser(@Body() userWhereInputUnique: UserModel): Promise<UserModel> {
-    return this.userService.findWithUserName(userWhereInputUnique);
+    return this.userService.findUser(userWhereInputUnique);
   }
 }

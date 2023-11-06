@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
 import { User as UserModel, Prisma } from '@prisma/client';
 
@@ -6,7 +6,7 @@ import { User as UserModel, Prisma } from '@prisma/client';
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
-  async findWithUserName(username): Promise<UserModel | null> {
+  async findUser(username): Promise<UserModel | null> {
     return this.prisma.user.findUnique({
       where: {
         username: username
@@ -31,7 +31,25 @@ export class UserService {
     });
   }
 
+  async findUserByEmail(email): Promise<UserModel | null> {
+    return this.prisma.user.findUnique({
+      where: {
+        email: email
+      }
+    });
+  }
+
   async createUser(data: Prisma.UserCreateInput): Promise<UserModel> {
+    const existingUser = await Promise.all([this.findUser(data.username), this.findUserByEmail(data.email)]);
+
+    if (existingUser[0]) {
+      throw new ConflictException('Username already exists');
+    }
+
+    if (existingUser[1]) {
+      throw new ConflictException('Email already exists');
+    }
+
     return this.prisma.user.create({
       data
     });
