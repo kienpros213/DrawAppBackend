@@ -20,9 +20,9 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage('connected')
-  handleNewUser(client: Socket, roomName: any): void {
-    if (!this.online.includes(client.id)) {
-      this.online.push(client.id);
+  handleNewUser(client: Socket, payload: any): void {
+    if (!this.online.includes(payload.username)) {
+      this.online.push(payload.username);
     }
     this.server.emit('userConnected', this.online);
   }
@@ -106,6 +106,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   //////////mouse location listener//////////
   @SubscribeMessage('mouseLocation')
   handleMouseLocation(client: Socket, payload: any): void {
+    console.log(payload);
     client.to(payload.room).emit('serverMouseLocation', payload);
   }
 
@@ -114,5 +115,11 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   handleClientClearCanvas(client: Socket, payload: any): void {
     console.log(payload);
     console.log(this.roomDrawState[payload.room].clientId);
+  }
+
+  @SubscribeMessage('clientThree')
+  handleThree(client: Socket, payload: any): void {
+    console.log(payload);
+    client.broadcast.emit('serverThree', payload);
   }
 }

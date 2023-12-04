@@ -6,7 +6,7 @@ import { User as UserModel, Prisma } from '@prisma/client';
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
-  async findUser(username): Promise<UserModel | null> {
+  async findUser(username: string): Promise<UserModel | null> {
     return this.prisma.user.findUnique({
       where: {
         username: username
@@ -14,24 +14,7 @@ export class UserService {
     });
   }
 
-  async users(params: {
-    skip?: number;
-    take?: number;
-    cursor?: Prisma.UserWhereUniqueInput;
-    where?: Prisma.UserWhereInput;
-    orderBy?: Prisma.UserOrderByWithRelationInput;
-  }): Promise<UserModel[]> {
-    const { skip, take, cursor, where, orderBy } = params;
-    return this.prisma.user.findMany({
-      skip,
-      take,
-      cursor,
-      where,
-      orderBy
-    });
-  }
-
-  async findUserByEmail(email): Promise<UserModel | null> {
+  async findUserByEmail(email: string): Promise<UserModel | null> {
     return this.prisma.user.findUnique({
       where: {
         email: email
