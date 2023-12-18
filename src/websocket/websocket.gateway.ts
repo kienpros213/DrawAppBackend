@@ -6,7 +6,6 @@ import {
   OnGatewayDisconnect
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { getRoomDrawState } from 'src/utils/getRoomDrawState';
 
 @WebSocketGateway()
 export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -39,108 +38,61 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   handleJoinRequest(client: Socket, roomName: any): void {
     client.join(roomName);
     if (!this.roomDrawState['room: ' + roomName + '']) {
-      this.roomDrawState['room: ' + roomName + ''] = { clientId: [], shapeIndex: 0, drawState: {} };
+      this.roomDrawState['room: ' + roomName + ''] = {
+        clientId: [],
+        drawState: { penDraw: { shapeIndex: 0 }, freeDraw: { shapeIndex: 0 } }
+      };
     }
     this.roomDrawState['room: ' + roomName + ''].clientId.push(client.id);
     client.emit('roomJoined', this.roomDrawState['room: ' + roomName + '']);
     // console.log(this.roomDrawState);
   }
 
-  @SubscribeMessage('clientThree')
-  handleThree(client: Socket, payload: any): void {
+  @SubscribeMessage('freeDraw')
+  handleFreeDraw(client: Socket, payload: any): void {
     const roomKey = 'room: ' + payload.room;
-    client.to(payload.room).emit('serverThree', { id: client.id, data: payload.drawPos });
+    //emit draw instruction for other client
+    client.to(payload.room).emit('serverFreeDraw', { id: client.id, data: payload.drawPos });
 
-    // Get the current shapeIndex
-    const shapeIndex = this.roomDrawState[roomKey].shapeIndex;
+    const shapeIndex = this.roomDrawState[roomKey].drawState.freeDraw.shapeIndex;
 
-    // Initialize drawState if it doesn't exist for the current shapeIndex
-    if (!this.roomDrawState[roomKey].drawState[shapeIndex]) {
-      this.roomDrawState[roomKey].drawState[shapeIndex] = [];
+    //create new shape array
+    if (!this.roomDrawState[roomKey].drawState.freeDraw[shapeIndex]) {
+      this.roomDrawState[roomKey].drawState.freeDraw[shapeIndex] = [];
     }
 
-    // Push data into drawState under the current shapeIndex
-    this.roomDrawState[roomKey].drawState[shapeIndex].push(payload.drawPos);
+    //push into shape array
+    this.roomDrawState[roomKey].drawState.freeDraw[shapeIndex].push(payload.drawPos);
+    console.log('roomDrawState', this.roomDrawState[roomKey].drawState.freeDraw);
   }
 
-  @SubscribeMessage('clientStopDraw')
+  @SubscribeMessage('stopFreeDraw')
   handleClientStopDraw(client: Socket, payload: any): void {
     console.log(payload);
     const roomKey = 'room: ' + payload;
 
-    client.to(payload).emit('serverStopDraw', client.id);
+    client.to(payload).emit('serverStopFreeDraw', client.id);
 
     // Increment the shapeIndex
-    this.roomDrawState[roomKey].shapeIndex += 1;
-    console.log(this.roomDrawState[roomKey].shapeIndex);
-    console.log(this.roomDrawState);
+    this.roomDrawState[roomKey].drawState.freeDraw.shapeIndex += 1;
   }
 
-  // //////////brush listener//////////
-  // @SubscribeMessage('clientBrushDraw')
-  // handleClientBrushDraw(client: Socket, payload: any): void {
-  //   client.to(payload.room).emit('serverBrushDraw', payload);
-  //   const getBrushDrawState = getRoomDrawState(this.roomDrawState, payload);
-  //   getBrushDrawState[payload.room][payload.tool].push(payload);
-  // }
+  @SubscribeMessage('penDraw')
+  handlePenDraw(client: Socket, payload: any): void {
+    const roomKey = 'room: ' + payload.room;
+    //emit draw instruction for other client
+    client.to(payload.room).emit('serverPenDraw', { id: client.id, data: payload.drawPos });
 
-  // //////////circle listener//////////
-  // @SubscribeMessage('clientCircleDraw')
-  // handleClientCircleDraw(client: Socket, payload: any): void {
-  //   client.to(payload.room).emit('serverCircleDraw', payload);
-  // }
+    const shapeIndex = this.roomDrawState[roomKey].drawState.penDraw.shapeIndex;
 
-  // @SubscribeMessage('clientPushCircle')
-  // handleClientPushCircle(client: Socket, payload: any): void {
-  //   client.to(payload.room).emit('serverPushCircle', payload);
-  //   const getCircleDrawState = getRoomDrawState(this.roomDrawState, payload);
-  //   getCircleDrawState[payload.room][payload.tool].push(payload);
-  // }
+    //create new shape array
+    if (!this.roomDrawState[roomKey].drawState.penDraw[shapeIndex]) {
+      this.roomDrawState[roomKey].drawState.penDraw[shapeIndex] = [];
+    }
 
-  // //////////rectangle listener//////////
-  // @SubscribeMessage('clientRectDraw')
-  // handleClientRectDraw(client: Socket, payload: any): void {
-  //   client.to(payload.room).emit('serverRectDraw', payload);
-  // }
-
-  // @SubscribeMessage('clientPushRect')
-  // handleClientPushRect(client: Socket, payload: any): void {
-  //   client.to(payload.room).emit('serverPushRect', payload);
-  //   const getRectDrawState = getRoomDrawState(this.roomDrawState, payload);
-  //   getRectDrawState[payload.room][payload.tool].push(payload);
-  // }
-
-  // //////////eraser listener//////////
-  // @SubscribeMessage('clientEraserDraw')
-  // handleClientEraserDraw(client: Socket, payload: any): void {
-  //   client.to(payload.room).emit('serverEraserDraw', payload);
-  // }
-
-  // //////////freeShape listener//////////
-  // @SubscribeMessage('clientFreeShapeDraw')
-  // handleClientFreeShapeDraw(client: Socket, payload: any): void {
-  //   client.to(payload.room).emit('serverFreeShapeDraw', payload);
-  // }
-
-  // @SubscribeMessage('clientStopFreeShape')
-  // handleClientStopFreeShape(client: Socket, payload: any): void {
-  //   // client.broadcast.emit("serverStopFreeShape",);
-  //   client.to(payload.room).emit('serverStopFreeShape', payload);
-  //   const getFreeShapeDrawState = getRoomDrawState(this.roomDrawState, payload);
-  //   getFreeShapeDrawState[payload.room][payload.tool].push(payload);
-  // }
-
-  // //////////mouse location listener//////////
-  // @SubscribeMessage('mouseLocation')
-  // handleMouseLocation(client: Socket, payload: any): void {
-  //   console.log(payload);
-  //   client.to(payload.room).emit('serverMouseLocation', payload);
-  // }
-
-  // //////////clear canvas listener//////////
-  // @SubscribeMessage('clientClearCanvas')
-  // handleClientClearCanvas(client: Socket, payload: any): void {
-  //   console.log(payload);
-  //   console.log(this.roomDrawState[payload.room].clientId);
-  // }
+    //push into shape array
+    this.roomDrawState[roomKey].drawState.penDraw[shapeIndex].push(payload.drawPos);
+    console.log('roomDrawState', this.roomDrawState[roomKey].drawState.penDraw);
+    this.roomDrawState[roomKey].drawState.penDraw.shapeIndex += 1;
+  }
 }
