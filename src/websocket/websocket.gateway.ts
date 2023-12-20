@@ -45,7 +45,6 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     }
     this.roomDrawState['room: ' + roomName + ''].clientId.push(client.id);
     client.emit('roomJoined', this.roomDrawState['room: ' + roomName + '']);
-    // console.log(this.roomDrawState);
   }
 
   @SubscribeMessage('freeDraw')
