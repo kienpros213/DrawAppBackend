@@ -6,8 +6,10 @@ import {
   OnGatewayDisconnect
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import * as fs from 'fs';
+import * as path from 'path';
 
-@WebSocketGateway()
+@WebSocketGateway({ cors: true })
 export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 
@@ -93,5 +95,11 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     this.roomDrawState[roomKey].drawState.penDraw[shapeIndex].push(payload.drawPos);
     console.log('roomDrawState', this.roomDrawState[roomKey].drawState.penDraw);
     this.roomDrawState[roomKey].drawState.penDraw.shapeIndex += 1;
+  }
+
+  @SubscribeMessage('loadModel')
+  handleLoadModel(client: Socket, payload: any): void {
+    console.log(payload.fileLenght);
+    client.broadcast.emit('serverLoadModel', payload);
   }
 }
