@@ -102,4 +102,10 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     console.log(payload.fileLength);
     client.broadcast.emit('serverLoadModel', payload);
   }
+
+  @SubscribeMessage('transform')
+  handleTransform(client: Socket, payload: any): void {
+    console.log(payload);
+    client.broadcast.emit('serverTransfrom', payload);
+  }
 }

@@ -74,6 +74,10 @@ let WebsocketGateway = class WebsocketGateway {
         console.log(payload.fileLength);
         client.broadcast.emit('serverLoadModel', payload);
     }
+    handleTransform(client, payload) {
+        console.log(payload);
+        client.broadcast.emit('serverTransfrom', payload);
+    }
 };
 exports.WebsocketGateway = WebsocketGateway;
 __decorate([
@@ -116,6 +120,12 @@ __decorate([
     __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
     __metadata("design:returntype", void 0)
 ], WebsocketGateway.prototype, "handleLoadModel", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('transform'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
+    __metadata("design:returntype", void 0)
+], WebsocketGateway.prototype, "handleTransform", null);
 exports.WebsocketGateway = WebsocketGateway = __decorate([
     (0, websockets_1.WebSocketGateway)({ cors: true })
 ], WebsocketGateway);
