@@ -99,7 +99,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @SubscribeMessage('loadModel')
   handleLoadModel(client: Socket, payload: any): void {
-    console.log(payload.fileLenght);
+    console.log(payload.fileLength);
     client.broadcast.emit('serverLoadModel', payload);
   }
 }

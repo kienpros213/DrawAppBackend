@@ -71,7 +71,7 @@ let WebsocketGateway = class WebsocketGateway {
         this.roomDrawState[roomKey].drawState.penDraw.shapeIndex += 1;
     }
     handleLoadModel(client, payload) {
-        console.log(payload.fileLenght);
+        console.log(payload.fileLength);
         client.broadcast.emit('serverLoadModel', payload);
     }
 };
