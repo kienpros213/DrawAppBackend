@@ -12,10 +12,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.WebsocketGateway = void 0;
 const websockets_1 = require("@nestjs/websockets");
 const socket_io_1 = require("socket.io");
+const concatArrayBuffer_1 = require("../utils/concatArrayBuffer");
 let WebsocketGateway = class WebsocketGateway {
     constructor() {
         this.roomDrawState = {};
         this.online = [];
+        this.receivedChunks = [];
     }
     handleConnection(client, payload) {
         console.log('A user connected');
@@ -37,46 +39,67 @@ let WebsocketGateway = class WebsocketGateway {
         if (!this.roomDrawState['room: ' + roomName + '']) {
             this.roomDrawState['room: ' + roomName + ''] = {
                 clientId: [],
-                drawState: { penDraw: { shapeIndex: 0 }, freeDraw: { shapeIndex: 0 } }
+                drawState: { model: { shapeIndex: 0 }, penDraw: { shapeIndex: 0 }, freeDraw: { shapeIndex: 0 } }
             };
         }
         this.roomDrawState['room: ' + roomName + ''].clientId.push(client.id);
         client.emit('roomJoined', this.roomDrawState['room: ' + roomName + '']);
     }
     handleFreeDraw(client, payload) {
-        const roomKey = 'room: ' + payload.room;
-        client.to(payload.room).emit('serverFreeDraw', { id: client.id, data: payload.drawPos });
-        const shapeIndex = this.roomDrawState[roomKey].drawState.freeDraw.shapeIndex;
-        if (!this.roomDrawState[roomKey].drawState.freeDraw[shapeIndex]) {
-            this.roomDrawState[roomKey].drawState.freeDraw[shapeIndex] = [];
+        if (payload.room) {
+            const roomKey = 'room: ' + payload.room;
+            const shapeIndex = this.roomDrawState[roomKey].drawState.freeDraw.shapeIndex;
+            if (!this.roomDrawState[roomKey].drawState.freeDraw[shapeIndex]) {
+                this.roomDrawState[roomKey].drawState.freeDraw[shapeIndex] = [];
+            }
+            this.roomDrawState[roomKey].drawState.freeDraw[shapeIndex].push(payload.drawPos);
+            console.log('roomDrawState', this.roomDrawState[roomKey].drawState.freeDraw);
+            client.to(payload.room).emit('serverFreeDraw', { id: client.id, data: payload.drawPos });
         }
-        this.roomDrawState[roomKey].drawState.freeDraw[shapeIndex].push(payload.drawPos);
-        console.log('roomDrawState', this.roomDrawState[roomKey].drawState.freeDraw);
     }
     handleClientStopDraw(client, payload) {
-        console.log(payload);
-        const roomKey = 'room: ' + payload;
-        client.to(payload).emit('serverStopFreeDraw', client.id);
-        this.roomDrawState[roomKey].drawState.freeDraw.shapeIndex += 1;
+        if (payload.room) {
+            console.log(payload);
+            const roomKey = 'room: ' + payload;
+            this.roomDrawState[roomKey].drawState.freeDraw.shapeIndex += 1;
+            client.to(payload).emit('serverStopFreeDraw', client.id);
+        }
     }
     handlePenDraw(client, payload) {
-        const roomKey = 'room: ' + payload.room;
-        client.to(payload.room).emit('serverPenDraw', { id: client.id, data: payload.drawPos });
-        const shapeIndex = this.roomDrawState[roomKey].drawState.penDraw.shapeIndex;
-        if (!this.roomDrawState[roomKey].drawState.penDraw[shapeIndex]) {
-            this.roomDrawState[roomKey].drawState.penDraw[shapeIndex] = [];
+        if (payload.room) {
+            const roomKey = 'room: ' + payload.room;
+            const shapeIndex = this.roomDrawState[roomKey].drawState.penDraw.shapeIndex;
+            if (!this.roomDrawState[roomKey].drawState.penDraw[shapeIndex]) {
+                this.roomDrawState[roomKey].drawState.penDraw[shapeIndex] = [];
+            }
+            this.roomDrawState[roomKey].drawState.penDraw[shapeIndex].push(payload.drawPos);
+            console.log('roomDrawState', this.roomDrawState[roomKey].drawState.penDraw);
+            this.roomDrawState[roomKey].drawState.penDraw.shapeIndex += 1;
+            client.to(payload.room).emit('serverPenDraw', { id: client.id, data: payload.drawPos });
         }
-        this.roomDrawState[roomKey].drawState.penDraw[shapeIndex].push(payload.drawPos);
-        console.log('roomDrawState', this.roomDrawState[roomKey].drawState.penDraw);
-        this.roomDrawState[roomKey].drawState.penDraw.shapeIndex += 1;
     }
     handleLoadModel(client, payload) {
-        console.log(payload.fileLength);
-        client.broadcast.emit('serverLoadModel', payload);
+        if (payload.room) {
+            const roomKey = 'room: ' + payload.room;
+            const shapeIndex = this.roomDrawState[roomKey].drawState.model.shapeIndex;
+            this.receivedChunks.push(payload.data);
+            const combinedBuffer = (0, concatArrayBuffer_1.concatArrayBuffer)(...this.receivedChunks);
+            console.log(combinedBuffer);
+            if (!this.roomDrawState[roomKey].drawState.model[shapeIndex]) {
+                this.roomDrawState[roomKey].drawState.model[shapeIndex] = [];
+            }
+            this.roomDrawState[roomKey].drawState.model[shapeIndex].push(payload.data);
+            if (combinedBuffer.byteLength === payload.byteLength) {
+                console.log(this.roomDrawState[roomKey].drawState.model[shapeIndex]);
+                this.roomDrawState[roomKey].drawState.model.shapeIndex += 1;
+                this.receivedChunks = [];
+            }
+        }
+        client.to(payload.room).emit('serverLoadModel', payload);
     }
     handleTransform(client, payload) {
         console.log(payload);
-        client.broadcast.emit('serverTransfrom', payload);
+        client.to(payload.room).emit('serverTransfrom', payload);
     }
 };
 exports.WebsocketGateway = WebsocketGateway;

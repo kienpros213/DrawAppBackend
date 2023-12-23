@@ -6,15 +6,15 @@ import {
   OnGatewayDisconnect
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import * as fs from 'fs';
-import * as path from 'path';
+import { concatArrayBuffer } from 'src/utils/concatArrayBuffer';
 
 @WebSocketGateway({ cors: true })
 export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 
-  private roomDrawState = {};
-  private online = [];
+  private roomDrawState: object = {};
+  private online: Array<string> = [];
+  private receivedChunks: Array<ArrayBuffer> = [];
 
   handleConnection(client: Socket, payload: any): void {
     console.log('A user connected');
@@ -42,7 +42,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     if (!this.roomDrawState['room: ' + roomName + '']) {
       this.roomDrawState['room: ' + roomName + ''] = {
         clientId: [],
-        drawState: { penDraw: { shapeIndex: 0 }, freeDraw: { shapeIndex: 0 } }
+        drawState: { model: { shapeIndex: 0 }, penDraw: { shapeIndex: 0 }, freeDraw: { shapeIndex: 0 } }
       };
     }
     this.roomDrawState['room: ' + roomName + ''].clientId.push(client.id);
@@ -51,61 +51,86 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @SubscribeMessage('freeDraw')
   handleFreeDraw(client: Socket, payload: any): void {
-    const roomKey = 'room: ' + payload.room;
-    //emit draw instruction for other client
-    client.to(payload.room).emit('serverFreeDraw', { id: client.id, data: payload.drawPos });
+    if (payload.room) {
+      const roomKey = 'room: ' + payload.room;
+      //emit draw instruction for other client
 
-    const shapeIndex = this.roomDrawState[roomKey].drawState.freeDraw.shapeIndex;
+      const shapeIndex = this.roomDrawState[roomKey].drawState.freeDraw.shapeIndex;
 
-    //create new shape array
-    if (!this.roomDrawState[roomKey].drawState.freeDraw[shapeIndex]) {
-      this.roomDrawState[roomKey].drawState.freeDraw[shapeIndex] = [];
+      //create new shape array
+      if (!this.roomDrawState[roomKey].drawState.freeDraw[shapeIndex]) {
+        this.roomDrawState[roomKey].drawState.freeDraw[shapeIndex] = [];
+      }
+
+      //push into shape array
+      this.roomDrawState[roomKey].drawState.freeDraw[shapeIndex].push(payload.drawPos);
+      console.log('roomDrawState', this.roomDrawState[roomKey].drawState.freeDraw);
+      client.to(payload.room).emit('serverFreeDraw', { id: client.id, data: payload.drawPos });
     }
-
-    //push into shape array
-    this.roomDrawState[roomKey].drawState.freeDraw[shapeIndex].push(payload.drawPos);
-    console.log('roomDrawState', this.roomDrawState[roomKey].drawState.freeDraw);
   }
 
   @SubscribeMessage('stopFreeDraw')
   handleClientStopDraw(client: Socket, payload: any): void {
-    console.log(payload);
-    const roomKey = 'room: ' + payload;
+    if (payload.room) {
+      console.log(payload);
+      const roomKey = 'room: ' + payload;
 
-    client.to(payload).emit('serverStopFreeDraw', client.id);
-
-    // Increment the shapeIndex
-    this.roomDrawState[roomKey].drawState.freeDraw.shapeIndex += 1;
+      this.roomDrawState[roomKey].drawState.freeDraw.shapeIndex += 1;
+      client.to(payload).emit('serverStopFreeDraw', client.id);
+    }
   }
 
   @SubscribeMessage('penDraw')
   handlePenDraw(client: Socket, payload: any): void {
-    const roomKey = 'room: ' + payload.room;
-    //emit draw instruction for other client
-    client.to(payload.room).emit('serverPenDraw', { id: client.id, data: payload.drawPos });
+    if (payload.room) {
+      const roomKey = 'room: ' + payload.room;
+      //emit draw instruction for other client
 
-    const shapeIndex = this.roomDrawState[roomKey].drawState.penDraw.shapeIndex;
+      const shapeIndex = this.roomDrawState[roomKey].drawState.penDraw.shapeIndex;
 
-    //create new shape array
-    if (!this.roomDrawState[roomKey].drawState.penDraw[shapeIndex]) {
-      this.roomDrawState[roomKey].drawState.penDraw[shapeIndex] = [];
+      //create new shape array
+      if (!this.roomDrawState[roomKey].drawState.penDraw[shapeIndex]) {
+        this.roomDrawState[roomKey].drawState.penDraw[shapeIndex] = [];
+      }
+
+      //push into shape array
+      this.roomDrawState[roomKey].drawState.penDraw[shapeIndex].push(payload.drawPos);
+      console.log('roomDrawState', this.roomDrawState[roomKey].drawState.penDraw);
+      this.roomDrawState[roomKey].drawState.penDraw.shapeIndex += 1;
+      client.to(payload.room).emit('serverPenDraw', { id: client.id, data: payload.drawPos });
     }
-
-    //push into shape array
-    this.roomDrawState[roomKey].drawState.penDraw[shapeIndex].push(payload.drawPos);
-    console.log('roomDrawState', this.roomDrawState[roomKey].drawState.penDraw);
-    this.roomDrawState[roomKey].drawState.penDraw.shapeIndex += 1;
   }
 
   @SubscribeMessage('loadModel')
   handleLoadModel(client: Socket, payload: any): void {
-    console.log(payload.fileLength);
-    client.broadcast.emit('serverLoadModel', payload);
+    if (payload.room) {
+      // client.broadcast.emit('serverLoadModel', payload)
+      const roomKey = 'room: ' + payload.room;
+
+      const shapeIndex = this.roomDrawState[roomKey].drawState.model.shapeIndex;
+
+      this.receivedChunks.push(payload.data);
+      const combinedBuffer = concatArrayBuffer(...this.receivedChunks);
+      console.log(combinedBuffer);
+      if (!this.roomDrawState[roomKey].drawState.model[shapeIndex]) {
+        this.roomDrawState[roomKey].drawState.model[shapeIndex] = [];
+      }
+
+      this.roomDrawState[roomKey].drawState.model[shapeIndex].push(payload.data);
+
+      if (combinedBuffer.byteLength === payload.byteLength) {
+        console.log(this.roomDrawState[roomKey].drawState.model[shapeIndex]);
+        this.roomDrawState[roomKey].drawState.model.shapeIndex += 1;
+        this.receivedChunks = [];
+      }
+    }
+    client.to(payload.room).emit('serverLoadModel', payload);
   }
 
   @SubscribeMessage('transform')
   handleTransform(client: Socket, payload: any): void {
     console.log(payload);
-    client.broadcast.emit('serverTransfrom', payload);
+    // client.broadcast.emit('serverTransfrom', payload);
+    client.to(payload.room).emit('serverTransfrom', payload);
   }
 }

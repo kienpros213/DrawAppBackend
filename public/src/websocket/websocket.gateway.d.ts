@@ -4,6 +4,7 @@ export declare class WebsocketGateway implements OnGatewayConnection, OnGatewayD
     server: Server;
     private roomDrawState;
     private online;
+    private receivedChunks;
     handleConnection(client: Socket, payload: any): void;
     handleNewUser(client: Socket, payload: any): void;
     handleDisconnect(client: Socket): void;
