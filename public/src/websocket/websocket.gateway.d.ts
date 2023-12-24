@@ -14,4 +14,5 @@ export declare class WebsocketGateway implements OnGatewayConnection, OnGatewayD
     handlePenDraw(client: Socket, payload: any): void;
     handleLoadModel(client: Socket, payload: any): void;
     handleTransform(client: Socket, payload: any): void;
+    handleEndTransform(client: Socket, payload: any): void;
 }

@@ -84,22 +84,52 @@ let WebsocketGateway = class WebsocketGateway {
             const shapeIndex = this.roomDrawState[roomKey].drawState.model.shapeIndex;
             this.receivedChunks.push(payload.data);
             const combinedBuffer = (0, concatArrayBuffer_1.concatArrayBuffer)(...this.receivedChunks);
-            console.log(combinedBuffer);
             if (!this.roomDrawState[roomKey].drawState.model[shapeIndex]) {
-                this.roomDrawState[roomKey].drawState.model[shapeIndex] = [];
+                this.roomDrawState[roomKey].drawState.model[shapeIndex] = {
+                    name: payload.fileName,
+                    position: [],
+                    rotation: [],
+                    scale: [],
+                    data: []
+                };
             }
-            this.roomDrawState[roomKey].drawState.model[shapeIndex].push(payload.data);
+            this.roomDrawState[roomKey].drawState.model[shapeIndex].data.push(payload.data);
             if (combinedBuffer.byteLength === payload.byteLength) {
-                console.log(this.roomDrawState[roomKey].drawState.model[shapeIndex]);
+                console.log(this.roomDrawState[roomKey].drawState.model);
                 this.roomDrawState[roomKey].drawState.model.shapeIndex += 1;
                 this.receivedChunks = [];
             }
         }
+        console.log();
         client.to(payload.room).emit('serverLoadModel', payload);
     }
     handleTransform(client, payload) {
         console.log(payload);
         client.to(payload.room).emit('serverTransfrom', payload);
+    }
+    handleEndTransform(client, payload) {
+        if (payload.room) {
+            const roomKey = 'room: ' + payload.room;
+            const modelName = payload.name;
+            const position = Object.values(payload.position);
+            const rotation = Object.values(payload.rotation);
+            const scale = Object.values(payload.scale);
+            for (const key in this.roomDrawState[roomKey].drawState.model) {
+                if (this.roomDrawState[roomKey].drawState.model.hasOwnProperty(key) &&
+                    typeof this.roomDrawState[roomKey].drawState.model[key] === 'object') {
+                    const currentObject = this.roomDrawState[roomKey].drawState.model[key];
+                    if (currentObject.name === modelName) {
+                        for (let i = 0; i < 3; i++) {
+                            currentObject.position[i] = position[i];
+                            currentObject.rotation[i] = rotation[i];
+                            currentObject.scale[i] = scale[i];
+                        }
+                        console.log(currentObject.position);
+                        break;
+                    }
+                }
+            }
+        }
     }
 };
 exports.WebsocketGateway = WebsocketGateway;
@@ -149,6 +179,12 @@ __decorate([
     __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
     __metadata("design:returntype", void 0)
 ], WebsocketGateway.prototype, "handleTransform", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('endTransform'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
+    __metadata("design:returntype", void 0)
+], WebsocketGateway.prototype, "handleEndTransform", null);
 exports.WebsocketGateway = WebsocketGateway = __decorate([
     (0, websockets_1.WebSocketGateway)({ cors: true })
 ], WebsocketGateway);

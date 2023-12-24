@@ -111,26 +111,62 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
       this.receivedChunks.push(payload.data);
       const combinedBuffer = concatArrayBuffer(...this.receivedChunks);
-      console.log(combinedBuffer);
       if (!this.roomDrawState[roomKey].drawState.model[shapeIndex]) {
-        this.roomDrawState[roomKey].drawState.model[shapeIndex] = [];
+        this.roomDrawState[roomKey].drawState.model[shapeIndex] = {
+          name: payload.fileName,
+          position: [],
+          rotation: [],
+          scale: [],
+          data: []
+        };
       }
 
-      this.roomDrawState[roomKey].drawState.model[shapeIndex].push(payload.data);
+      this.roomDrawState[roomKey].drawState.model[shapeIndex].data.push(payload.data);
 
       if (combinedBuffer.byteLength === payload.byteLength) {
-        console.log(this.roomDrawState[roomKey].drawState.model[shapeIndex]);
+        console.log(this.roomDrawState[roomKey].drawState.model);
         this.roomDrawState[roomKey].drawState.model.shapeIndex += 1;
         this.receivedChunks = [];
       }
     }
+    console.log();
     client.to(payload.room).emit('serverLoadModel', payload);
   }
 
   @SubscribeMessage('transform')
   handleTransform(client: Socket, payload: any): void {
     console.log(payload);
-    // client.broadcast.emit('serverTransfrom', payload);
     client.to(payload.room).emit('serverTransfrom', payload);
+  }
+
+  @SubscribeMessage('endTransform')
+  handleEndTransform(client: Socket, payload: any): void {
+    if (payload.room) {
+      const roomKey = 'room: ' + payload.room;
+      const modelName = payload.name;
+      const position = Object.values(payload.position);
+      const rotation = Object.values(payload.rotation);
+      const scale = Object.values(payload.scale);
+
+      for (const key in this.roomDrawState[roomKey].drawState.model) {
+        if (
+          this.roomDrawState[roomKey].drawState.model.hasOwnProperty(key) &&
+          typeof this.roomDrawState[roomKey].drawState.model[key] === 'object'
+        ) {
+          const currentObject = this.roomDrawState[roomKey].drawState.model[key];
+
+          // Check if the current object has the target name
+          if (currentObject.name === modelName) {
+            for (let i = 0; i < 3; i++) {
+              currentObject.position[i] = position[i];
+              currentObject.rotation[i] = rotation[i];
+              currentObject.scale[i] = scale[i];
+            }
+            console.log(currentObject.position);
+            break;
+          }
+        }
+      }
+    }
   }
 }
