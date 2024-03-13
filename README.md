@@ -15,6 +15,7 @@ $ npm install
 ```bash
 # development
 $ docker compose up -d
+```
 
 ```bash
 # development
