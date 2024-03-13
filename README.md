@@ -10,13 +10,13 @@
 $ npm install
 ```
 
-# Running the app
-## Postgres container
+## Running the app
+### Postgres container
 ```bash
 # development
 $ docker compose up -d
 ```
-
+### Server
 ```bash
 # development
 $ npm run start
