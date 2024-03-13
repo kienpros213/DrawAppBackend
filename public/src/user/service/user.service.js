@@ -42,18 +42,6 @@ let UserService = class UserService {
             data
         });
     }
-    async updateUser(params) {
-        const { where, data } = params;
-        return this.prisma.user.update({
-            data,
-            where
-        });
-    }
-    async deleteUser(where) {
-        return this.prisma.user.delete({
-            where
-        });
-    }
 };
 exports.UserService = UserService;
 exports.UserService = UserService = __decorate([

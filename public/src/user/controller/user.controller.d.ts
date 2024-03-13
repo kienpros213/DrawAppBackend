@@ -4,5 +4,4 @@ export declare class UserController {
     private readonly userService;
     constructor(userService: UserService);
     signupUser(userData: Prisma.UserCreateInput): Promise<UserModel>;
-    findUser(userWhereInputUnique: UserModel): Promise<UserModel>;
 }

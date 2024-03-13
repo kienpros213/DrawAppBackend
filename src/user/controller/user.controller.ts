@@ -10,9 +10,4 @@ export class UserController {
   async signupUser(@Body() userData: Prisma.UserCreateInput): Promise<UserModel> {
     return this.userService.createUser(userData);
   }
-
-  @Get('finduser')
-  async findUser(@Body() userWhereInputUnique: UserModel): Promise<UserModel> {
-    return this.userService.findUser(userWhereInputUnique.username);
-  }
 }

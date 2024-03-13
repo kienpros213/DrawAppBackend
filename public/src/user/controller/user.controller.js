@@ -23,9 +23,6 @@ let UserController = class UserController {
     async signupUser(userData) {
         return this.userService.createUser(userData);
     }
-    async findUser(userWhereInputUnique) {
-        return this.userService.findUser(userWhereInputUnique.username);
-    }
 };
 exports.UserController = UserController;
 __decorate([
@@ -35,13 +32,6 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "signupUser", null);
-__decorate([
-    (0, common_1.Get)('finduser'),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
-], UserController.prototype, "findUser", null);
 exports.UserController = UserController = __decorate([
     (0, common_1.Controller)('user'),
     __metadata("design:paramtypes", [user_service_1.UserService])
